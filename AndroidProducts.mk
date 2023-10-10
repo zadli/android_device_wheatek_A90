@@ -1,14 +1,15 @@
 #
 # Copyright (C) 2023 The Android Open Source Project
 # Copyright (C) 2023 SebaUbuntu's TWRP device tree generator
+# Copyright (C) 2023 ZadliM
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
 PRODUCT_MAKEFILES := \
-    $(LOCAL_DIR)/omni_A90.mk
+    $(LOCAL_DIR)/twrp_A90.mk
 
 COMMON_LUNCH_CHOICES := \
-    omni_A90-user \
-    omni_A90-userdebug \
-    omni_A90-eng
+    twrp_A90-user \
+    twrp_A90-userdebug \
+    twrp_A90-eng
