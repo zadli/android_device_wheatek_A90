@@ -1,0 +1,60 @@
+name: Recovery build
+
+on:
+ push:
+   branches:
+     - master
+  workflow_dispatch:
+
+env:
+  MANIFEST: https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp -b twrp-11
+  DEVICE: A90
+  DT_LINK: https://github.com/zadli/android_device_wheatek_A90
+  DT_PATH: device/wheatek/A90
+  TARGET: bootimage
+  TZ: Europe/Moscow
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+       - name: Checkout
+         uses: actions/checkout@master
+         
+
+       - name: Initializing environment
+         run: |
+            sudo rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d
+            docker rmi `docker images -q`
+            git config --global user.name "zadli"
+            git config --global user.email "zadli@evileat.org"         
+            sudo -E apt-get clean
+            sudo -E apt-get -qq update
+            sudo -E apt-get -qq install bc build-essential zip curl libstdc++6 git wget python gcc clang libssl-dev repo rsync flex curl  bison aria2
+            sudo curl --create-dirs -L -o /usr/local/bin/repo -O -L https://storage.googleapis.com/git-repo-downloads/repo
+            sudo chmod a+rx /usr/local/bin/repo
+            
+       - name: Sync recovery source and device tree
+         run: |
+             mkdir work
+             cd work
+             repo init -u $MANIFEST --depth=1
+             repo sync -c -j4 --force-sync --no-clone-bundle --no-tags
+             repo sync -c -j4 --force-sync --no-clone-bundle --no-tags
+             git clone --depth=1 $DT_LINK $DT_PATH
+             
+       - name: Build
+         run: |
+              cd work
+              . build/envsetup.sh &&lunch twrp_$DEVICE-eng &&export ALLOW_MISSING_DEPENDENCIES=true && mka $TARGET
+             
+       - name: Release recovery image
+         uses: softprops/action-gh-release@v1
+         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+         with:
+          tag_name: TWRP_11.0
+          name: TWRP-A90
+          files: | 
+            work/out/target/product/A90/boot.img
